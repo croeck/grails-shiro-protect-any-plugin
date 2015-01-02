@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- *
  */
-package net.roecky.servlet.filters;
+package net.roecky.grails.plugins.shiroProtectAny.filters;
 
 import net.roecky.grails.plugins.shiroProtectAny.ShiroAnyUrlProtection;
 import net.roecky.grails.plugins.shiroProtectAny.ShiroAnyUrlProtectionService;
@@ -41,6 +40,7 @@ public class ShiroAnyUrlProtectionFilter implements Filter {
 
     private static final Logger LOGGER = Logger.getLogger(ShiroAnyUrlProtectionFilter.class);
 
+    // grails service that asserts the authentication
     private ShiroAnyUrlProtection shiroAnyUrlProtection;
 
     public void init(final FilterConfig filterConfig) throws ServletException {
@@ -54,16 +54,16 @@ public class ShiroAnyUrlProtectionFilter implements Filter {
     }
 
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse res = (HttpServletResponse) response;
+        final HttpServletRequest req = (HttpServletRequest) request;
+        final HttpServletResponse res = (HttpServletResponse) response;
 
         if(LOGGER.isDebugEnabled()) {
             LOGGER.debug("Invoked filter for '" + req.getRequestURL());
         }
 
-        // any filtered call has to be authenticated
+        // each (!) filtered call requires a valid authentication and permissions
         if(shiroAnyUrlProtection.accessControl(req, res, req.getSession())) {
-            // finally continue, but only if authenticated
+            // found valid permission, continue the request
             chain.doFilter (request, response);
         }
     }
