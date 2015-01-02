@@ -24,7 +24,8 @@ class ShiroProtectAnyGrailsPlugin {
     def version = "0.1.0"
     def grailsVersion = "2.2 > *"
 
-    def dependsOn = [shiro: "1.2.0 > *"]
+    def dependsOn = [shiro: "1.1.0 > *"]
+    def loadAfter = ["shiro"]
 
     def pluginExcludes = [
         "grails-app/views/error.gsp"
