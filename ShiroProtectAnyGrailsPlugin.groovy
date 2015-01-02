@@ -40,48 +40,66 @@ The plugin allows to setup authentication for static resource calls against Apac
 
     def license = "APACHE"
 
-    def documentation = "https://github.com/croeck/grails-shiro-protect-any-plugin/wiki"
+//    def documentation = ""
     def issueManagement = [ system: "GitHub", url: "https://github.com/croeck/grails-shiro-protect-any-plugin/issues" ]
     def scm = [ url: "https://github.com/croeck/grails-shiro-protect-any-plugin" ]
 
     def doWithWebDescriptor = { webXml ->
-        // filter specific URLs (if specified) or fallback and filter each request
-        def shiroAnyUrlProtectionFilter = [
-                name:'ShiroAnyUrlProtectionFilter',
-                filterClass:"net.roecky.servlet.filters.ShiroAnyUrlProtectionFilter",
-                urlPatterns:application.config.shiroAnyProtector?.urlPatterns ?: ["/*"]
-        ]
-        def filtersToAdd = [shiroAnyUrlProtectionFilter]
-        log.debug("Collected ${filtersToAdd.size()} filters to add within the ShiroProtectAnyGrailsPlugin")
+        println '\nConfiguring Shiro Protect Any Plugin filters ...'
 
-        def filters = webXml.filter[0]
-        filters + {
-            filtersToAdd.each { f ->
-                log.info "Adding filter: ${f.name} with class ${f.filterClass} and init-params: ${f.params}"
-                'filter' {
-                    'filter-name'(f.name)
-                    'filter-class'(f.filterClass)
-                    f.params?.each { k, v ->
-                        'init-param' {
-                            'param-name'(k)
-                            'param-value'(v.toString())
+        // URLs that shall require authentication
+        def urls = []
+
+        application.config.security?.shiro?.shiroAnyProtector?.urls?.each { url ->
+            if(url.startsWith("/*") || url.startsWith("*")) {
+                log.warn("Not allowed to add wildcard Shiro Protect Any Filter '$url' to prevent duplicate authentication filters")
+            } else {
+                urls << url
+            }
+        }
+
+        log.info("Applying Shiro Protect Any Filter to $urls")
+
+        // do not apply any filter if no URL has been specified
+        if(urls) {
+            // filter specific URLs (if specified) or fallback and filter each request
+            def shiroAnyUrlProtectionFilter = [
+                    name:'ShiroAnyUrlProtectionFilter',
+                    filterClass:"net.roecky.grails.plugins.shiroProtectAny.filters.ShiroAnyUrlProtectionFilter",
+                    urlPatterns:urls
+            ]
+            def filtersToAdd = [shiroAnyUrlProtectionFilter]
+            log.debug("Collected ${filtersToAdd.size()} filters to add within the ShiroProtectAnyGrailsPlugin")
+
+            def filters = webXml.filter[0]
+            filters + {
+                filtersToAdd.each { f ->
+                    log.info "Adding filter: ${f.name} with class ${f.filterClass} and init-params: ${f.params}"
+                    'filter' {
+                        'filter-name'(f.name)
+                        'filter-class'(f.filterClass)
+                        f.params?.each { k, v ->
+                            'init-param' {
+                                'param-name'(k)
+                                'param-value'(v.toString())
+                            }
                         }
                     }
                 }
             }
-        }
-        // and finally also add the filter mappings
-        def mappings = webXml.'filter-mapping'[0]
-        mappings + {
-            filtersToAdd.each { f ->
-                f.urlPatterns?.each { p ->
-                    log.info "Adding url pattern ${p} for filter ${f.name}"
-                    'filter-mapping' {
-                        'filter-name'(f.name)
-                        'url-pattern'(p)
-                        if (f.dispatchers) {
-                            for (d in f.dispatchers) {
-                                'dispatcher'(d)
+            // and finally also add the filter mappings
+            def mappings = webXml.'filter-mapping'[0]
+            mappings + {
+                filtersToAdd.each { f ->
+                    f.urlPatterns?.each { p ->
+                        log.info "Adding url pattern ${p} for filter ${f.name}"
+                        'filter-mapping' {
+                            'filter-name'(f.name)
+                            'url-pattern'(p)
+                            if (f.dispatchers) {
+                                for (d in f.dispatchers) {
+                                    'dispatcher'(d)
+                                }
                             }
                         }
                     }
