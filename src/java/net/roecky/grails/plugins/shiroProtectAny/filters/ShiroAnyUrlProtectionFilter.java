@@ -18,8 +18,9 @@ package net.roecky.grails.plugins.shiroProtectAny.filters;
 
 import net.roecky.grails.plugins.shiroProtectAny.ShiroAnyUrlProtection;
 import net.roecky.grails.plugins.shiroProtectAny.ShiroAnyUrlProtectionService;
-import org.apache.log4j.Logger;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 public class ShiroAnyUrlProtectionFilter implements Filter {
 
-    private static final Logger LOGGER = Logger.getLogger(ShiroAnyUrlProtectionFilter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShiroAnyUrlProtectionFilter.class);
 
     // grails service that asserts the authentication
     private ShiroAnyUrlProtection shiroAnyUrlProtection;
