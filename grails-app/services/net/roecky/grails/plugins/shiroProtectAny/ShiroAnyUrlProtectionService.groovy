@@ -21,17 +21,29 @@
  */
 package net.roecky.grails.plugins.shiroProtectAny
 
+import groovy.transform.CompileStatic
+import groovy.transform.TypeCheckingMode
+import groovy.util.logging.Slf4j
+
+import org.apache.shiro.mgt.SecurityManager
 import org.apache.shiro.web.subject.WebSubject
+import org.codehaus.groovy.grails.commons.GrailsApplication
+import org.codehaus.groovy.grails.web.mapping.AbstractUrlMappingInfo
 import org.codehaus.groovy.grails.web.mapping.LinkGenerator
+import org.codehaus.groovy.grails.web.mapping.UrlMappingsHolder
 
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
 
+@Slf4j
+@CompileStatic
 class ShiroAnyUrlProtectionService implements ShiroAnyUrlProtection {
 
-    def grailsApplication
-    def shiroSecurityManager
+    static transactional = false
+
+    GrailsApplication grailsApplication
+    SecurityManager shiroSecurityManager
     LinkGenerator grailsLinkGenerator
 
     // each (!) request that calls this method DOES require a valid authentication and permissions
@@ -40,11 +52,11 @@ class ShiroAnyUrlProtectionService implements ShiroAnyUrlProtection {
         // Workaround for the security manager, see description: https://github.com/pledbrook/grails-shiro/issues/15
         def subject = new WebSubject.Builder(shiroSecurityManager, request, response).buildWebSubject()
 
-        if (subject.principal == null || !subject.authenticated) {
+        if (subject.principal == null || !subject.isAuthenticated()) {
             // Subject is not authorized:
             // By default redirect to the login page and build the target URI from the request's forwardURI
-            def targetURI = new StringBuilder(request.forwardURI[request.contextPath.size()..-1])
-            def query = request.queryString
+            def targetURI = new StringBuilder(forwardURI(request)[request.contextPath.size()..-1])
+            String query = request.queryString
             if (query) {
                 if (!query.startsWith('?')) {
                     targetURI << '?'
@@ -55,29 +67,30 @@ class ShiroAnyUrlProtectionService implements ShiroAnyUrlProtection {
 
             // TODO as of now only the default 'onNotAuthenticated' action is supported
             // use the default shiro redirect URL
-            def redirectURI = grailsApplication.config.security?.shiro?.redirect?.uri
+            String redirectURI = shiroRedirectUri
             if (redirectURI) {
-                response.sendRedirect(redirectURI + "?targetUri=${targetURI.encodeAsURL()}")
+                redirectURI += "?targetUri=${encodeAsURL(targetURI)}"
             } else {
-                response.sendRedirect(
-                        grailsLinkGenerator.link(
-                            controller: "auth",
-                            action: "login",
-                            params: [targetUri: targetURI.toString()]))
+                redirectURI = grailsLinkGenerator.link(
+                    controller: "auth",
+                    action: "login",
+                    params: [targetUri: targetURI.toString()])
             }
+            response.sendRedirect(redirectURI)
             return false
         }
 
         // the subject is authorized, now check the permissions...
-        def forwardURIWithoutContext = request.forwardURI.replaceFirst(request.contextPath, "")
+        String forwardURIWithoutContext = forwardURI(request).replaceFirst(request.contextPath, "")
 
-        def controllerName = grailsApplication.mainContext.grailsUrlMappingsHolder.match(forwardURIWithoutContext).params.controller
-        def actionName = grailsApplication.mainContext.grailsUrlMappingsHolder.match(forwardURIWithoutContext).params.action
-        def id = grailsApplication.mainContext.grailsUrlMappingsHolder.match(forwardURIWithoutContext).params.id
+        def urlMappingsHolder = grailsApplication.mainContext.getBean('grailsUrlMappingsHolder', UrlMappingsHolder)
+        Map params = ((AbstractUrlMappingInfo)urlMappingsHolder.match(forwardURIWithoutContext)).params
+        String controllerName = params.controller
+        String actionName = params.action
+        String id = params.id
 
         // Check that the user has the required permission for the target controller/action.
-        def permString = new StringBuilder()
-        permString << controllerName
+        def permString = new StringBuilder(controllerName)
 
         if(actionName) {
             // only add an action if there is one, do NOT assume an 'index' action
@@ -94,9 +107,24 @@ class ShiroAnyUrlProtectionService implements ShiroAnyUrlProtection {
             // By default, redirect to the 'unauthorized' page.
             response.sendRedirect(grailsLinkGenerator.link(controller: "auth", action: "unauthorized"))
             return false
-        } else {
-            log.trace("Subject is authorized and permissions to '$permString' were found!")
-            return true
         }
+
+        log.trace("Subject is authorized and permissions to '$permString' were found!")
+        return true
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    private String forwardURI(request) {
+        request.forwardURI
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    private String encodeAsURL(s) {
+        s.encodeAsURL
+    }
+
+    @CompileStatic(TypeCheckingMode.SKIP)
+    private String getShiroRedirectUri() {
+         grailsApplication.config.security?.shiro?.redirect?.uri
     }
 }

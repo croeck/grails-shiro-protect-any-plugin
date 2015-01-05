@@ -22,6 +22,5 @@ import javax.servlet.http.HttpSession;
 
 public interface ShiroAnyUrlProtection {
 
-    abstract boolean accessControl(HttpServletRequest request, HttpServletResponse response, HttpSession session);
-
+    boolean accessControl(HttpServletRequest request, HttpServletResponse response, HttpSession session);
 }

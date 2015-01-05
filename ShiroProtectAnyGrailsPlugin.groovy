@@ -17,30 +17,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
+
+import net.roecky.grails.plugins.shiroProtectAny.filters.ShiroAnyUrlProtectionFilter
+
 class ShiroProtectAnyGrailsPlugin {
 
     def version = "0.1.0"
     def grailsVersion = "2.2 > *"
-
-    def dependsOn = [shiro: "1.1.0 > *"]
     def loadAfter = ["shiro"]
-
-    def pluginExcludes = [
-        "grails-app/views/error.gsp"
-    ]
-
     def title = "Shiro Protect Any Plugin"
     def author = "Cedric Röck"
     def authorEmail = "cedric.roeck@gmail.com"
-    def description = '''\
-The plugin allows to setup authentication for static resource calls against Apache Shiro.
-'''
-
+    def description = 'Allows to setup authentication for static resource calls against Apache Shiro.'
     def license = "APACHE"
-
-//    def documentation = ""
     def issueManagement = [ system: "GitHub", url: "https://github.com/croeck/grails-shiro-protect-any-plugin/issues" ]
     def scm = [ url: "https://github.com/croeck/grails-shiro-protect-any-plugin" ]
 
@@ -65,7 +55,7 @@ The plugin allows to setup authentication for static resource calls against Apac
             // filter specific URLs (if specified) or fallback and filter each request
             def shiroAnyUrlProtectionFilter = [
                     name:'ShiroAnyUrlProtectionFilter',
-                    filterClass:"net.roecky.grails.plugins.shiroProtectAny.filters.ShiroAnyUrlProtectionFilter",
+                    filterClass:ShiroAnyUrlProtectionFilter.name,
                     urlPatterns:urls
             ]
             def filtersToAdd = [shiroAnyUrlProtectionFilter]
@@ -75,7 +65,7 @@ The plugin allows to setup authentication for static resource calls against Apac
             filters + {
                 filtersToAdd.each { f ->
                     log.info "Adding filter: ${f.name} with class ${f.filterClass} and init-params: ${f.params}"
-                    'filter' {
+                    filter {
                         'filter-name'(f.name)
                         'filter-class'(f.filterClass)
                         f.params?.each { k, v ->
@@ -96,11 +86,7 @@ The plugin allows to setup authentication for static resource calls against Apac
                         'filter-mapping' {
                             'filter-name'(f.name)
                             'url-pattern'(p)
-                            if (f.dispatchers) {
-                                for (d in f.dispatchers) {
-                                    'dispatcher'(d)
-                                }
-                            }
+                            f.dispatchers.each { dispatcher it }
                         }
                     }
                 }
@@ -113,5 +99,4 @@ The plugin allows to setup authentication for static resource calls against Apac
         def FilterManager = getClass().getClassLoader().loadClass('grails.plugin.webxml.FilterManager')
         [ ShiroAnyUrlProtectionFilter: FilterManager.DEFAULT_POSITION - 500 ]
     }
-
 }
