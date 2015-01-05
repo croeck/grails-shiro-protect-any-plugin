@@ -17,5 +17,7 @@ grails.project.dependency.resolution = {
         compile (':shiro:1.2.1') {
             excludes([name: 'quartz', group: 'org.opensymphony.quartz'])
         }
+
+        compile ':webxml:1.4.1'
     }
 }

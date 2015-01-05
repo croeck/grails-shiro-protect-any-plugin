@@ -19,6 +19,7 @@
  * limitations under the License.
  */
 
+import grails.plugin.webxml.FilterManager
 import net.roecky.grails.plugins.shiroProtectAny.filters.ShiroAnyUrlProtectionFilter
 
 class ShiroProtectAnyGrailsPlugin {
@@ -96,7 +97,6 @@ class ShiroProtectAnyGrailsPlugin {
 
     // make sure the filter fires before the other filters, e.g. the javamelody plugin filter
     def getWebXmlFilterOrder() {
-        def FilterManager = getClass().getClassLoader().loadClass('grails.plugin.webxml.FilterManager')
         [ ShiroAnyUrlProtectionFilter: FilterManager.DEFAULT_POSITION - 500 ]
     }
 }
