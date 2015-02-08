@@ -37,7 +37,6 @@ import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpSession
 
 @Slf4j
-@CompileStatic
 class ShiroAnyUrlProtectionService implements ShiroAnyUrlProtection {
 
     static transactional = false
@@ -67,7 +66,7 @@ class ShiroAnyUrlProtectionService implements ShiroAnyUrlProtection {
 
             // TODO as of now only the default 'onNotAuthenticated' action is supported
             // use the default shiro redirect URL
-            String redirectURI = shiroRedirectUri
+            def redirectURI = grailsApplication.config.security?.shiro?.redirect?.uri
             if (redirectURI) {
                 redirectURI += "?targetUri=${encodeAsURL(targetURI)}"
             } else {
@@ -120,11 +119,6 @@ class ShiroAnyUrlProtectionService implements ShiroAnyUrlProtection {
 
     @CompileStatic(TypeCheckingMode.SKIP)
     private String encodeAsURL(s) {
-        s.encodeAsURL
-    }
-
-    @CompileStatic(TypeCheckingMode.SKIP)
-    private String getShiroRedirectUri() {
-         grailsApplication.config.security?.shiro?.redirect?.uri
+        s.encodeAsURL()
     }
 }
