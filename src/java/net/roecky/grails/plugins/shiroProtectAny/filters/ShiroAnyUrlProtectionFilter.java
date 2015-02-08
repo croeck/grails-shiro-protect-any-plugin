@@ -18,11 +18,12 @@ package net.roecky.grails.plugins.shiroProtectAny.filters;
 
 import net.roecky.grails.plugins.shiroProtectAny.ShiroAnyUrlProtection;
 import net.roecky.grails.plugins.shiroProtectAny.ShiroAnyUrlProtectionService;
-import org.apache.log4j.Logger;
-import org.codehaus.groovy.grails.web.context.ServletContextHolder;
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
+import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -31,22 +32,21 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * The {@link ShiroAnyUrlProtectionFilter} ...
  */
 public class ShiroAnyUrlProtectionFilter implements Filter {
 
-    private static final Logger LOGGER = Logger.getLogger(ShiroAnyUrlProtectionFilter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ShiroAnyUrlProtectionFilter.class);
 
     // grails service that asserts the authentication
     private ShiroAnyUrlProtection shiroAnyUrlProtection;
 
     public void init(final FilterConfig filterConfig) throws ServletException {
         // resolve the service bean
-        ApplicationContext context = (ApplicationContext)ServletContextHolder.getServletContext().getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
-        this.shiroAnyUrlProtection = (ShiroAnyUrlProtectionService) context.getBean("shiroAnyUrlProtectionService");
+        ApplicationContext context = (ApplicationContext)filterConfig.getServletContext().getAttribute(GrailsApplicationAttributes.APPLICATION_CONTEXT);
+        shiroAnyUrlProtection = context.getBean("shiroAnyUrlProtectionService", ShiroAnyUrlProtectionService.class);
     }
 
     public void destroy() {
@@ -67,5 +67,4 @@ public class ShiroAnyUrlProtectionFilter implements Filter {
             chain.doFilter (request, response);
         }
     }
-
 }
